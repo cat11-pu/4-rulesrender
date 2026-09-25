@@ -1,0 +1,17 @@
+# rulesrender
+
+浏览器单页样式工作台（原生 HTML/CSS/JS，零依赖）。
+
+## 起服务看页面
+
+    python3 -m http.server 8000
+
+浏览器打开 http://127.0.0.1:8000/ 即可看到实时预览。
+
+## 测试
+
+    node tests/run.js
+
+## 场景自检
+
+    node check_sample.js

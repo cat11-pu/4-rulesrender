@@ -1,0 +1,6 @@
+{
+  "css": "a { color: red; } b { color: blue; } a { weight: bold; }",
+  "changed": "a",
+  "bad_css": "a { color: red; ",
+  "subset_invariant": true
+}
