@@ -1,11 +1,66 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><title>rulesrender</title></head>
+<head>
+<meta charset="utf-8">
+<title>rulesrender</title>
+<style>
+  body { font-family: monospace; margin: 2em; }
+  textarea { width: 100%; height: 7em; }
+  #preview div { border: 1px dashed #999; margin: 4px 0; padding: 4px; }
+  #preview div.hit { outline: 2px solid orange; }
+  #status { color: #055; }
+  #error { color: #c00; }
+</style>
+</head>
 <body>
 <h1>rulesrender</h1>
-<p>样式预览由 app.js 渲染（真实 DOM）。</p>
+<p>改 CSS 或改动选择器，只增量重绘命中的规则。</p>
+<label>CSS：<textarea id="css">a { color: red; } b { color: blue; } a { font-weight: bold; }</textarea></label>
+<p><label>改动选择器：<input id="changed" value="a"></label></p>
+<p id="status"></p>
+<p id="error"></p>
+<div id="preview"></div>
 <pre id="out"></pre>
+<script src="ruleparser.js"></script>
+<script src="renderer.js"></script>
 <script src="app.js"></script>
-<script>document.getElementById("out").textContent = "见 node check_sample.js 的验收输出";</script>
+<script>
+(function () {
+  const cssBox = document.getElementById("css");
+  const changedBox = document.getElementById("changed");
+  const status = document.getElementById("status");
+  const errorBox = document.getElementById("error");
+  const preview = document.getElementById("preview");
+  const out = document.getElementById("out");
+
+  function render() {
+    const snap = app.snapshot(cssBox.value, changedBox.value.trim());
+    const nodes = new Map();
+    preview.textContent = "";
+    for (const selector of snap.selectors) {
+      const node = document.createElement("div");
+      node.textContent = selector;
+      preview.appendChild(node);
+      nodes.set(selector, node);
+    }
+    const parsed = ruleparser.parse(cssBox.value);
+    const instructions = renderer.compile(parsed.rules);
+    for (const inst of instructions) {
+      if (!snap.applied.includes(inst.selector)) continue;
+      const node = nodes.get(inst.selector);
+      for (const prop of Object.keys(inst.decls)) node.style.setProperty(prop, inst.decls[prop]);
+      node.classList.add("hit");
+    }
+    status.textContent = "编译 " + snap.selectors.length + " 条，本次重绘 " + snap.applied.length +
+      " 条（visited=" + snap.visited + "）";
+    errorBox.textContent = snap.error ? snap.error.code + " @ offset " + snap.error.offset : "";
+    out.textContent = JSON.stringify(snap, null, 2);
+  }
+
+  cssBox.addEventListener("input", render);
+  changedBox.addEventListener("input", render);
+  render();
+})();
+</script>
 </body>
 </html>

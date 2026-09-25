@@ -1,16 +1,20 @@
-// app.js：渲染（基线：全量重绘）
+// app.js：增量渲染入口（snapshot 结构固定：selectors / applied / visited / error）
+(function () {
 "use strict";
 
-const { parse } = require("./ruleparser.js");
-const { compile, repaint, budget } = require("./renderer.js");
+const ruleparser = typeof require === "function" ? require("./ruleparser.js") : globalThis.ruleparser;
+const renderer = typeof require === "function" ? require("./renderer.js") : globalThis.renderer;
 
 function snapshot(css, changed) {
-  const parsed = parse(css);
-  const instructions = compile(parsed.rules);
-  const result = repaint(instructions, changed);
-  const cost = budget(instructions, changed);
+  const parsed = ruleparser.parse(css);
+  const instructions = renderer.compile(parsed.rules);
+  const result = renderer.repaint(instructions, changed);
+  const cost = renderer.budget(instructions, changed);
   return { selectors: instructions.map((item) => item.selector),
            applied: result.applied, visited: cost.visited, error: parsed.error };
 }
 
-module.exports = { snapshot };
+const api = { snapshot };
+if (typeof module !== "undefined" && module.exports) module.exports = api;
+if (typeof globalThis !== "undefined") globalThis.app = api;
+})();
